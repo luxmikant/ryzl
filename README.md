@@ -100,12 +100,12 @@ Status transitions:
 3. `completed` – stub pipeline finished and `comments` contains placeholder insights.
 4. `failed` – job crashed; check worker logs.
 
-Because Day 2 ships with a stubbed pipeline, the returned comments are deterministic placeholder suggestions. Replace with the real multi-agent review pipeline in Day 3.
+Day 3 now ships with a deterministic multi-agent pipeline that tags each comment with the producing agent and surfaces aggregate metrics (`agents`, `metrics`) on the response payload. Set `PIPELINE_MODE=stub` in your environment if you need to fall back to the legacy deterministic stub.
 
 ## Roadmap
 
 1. **Day 1 (complete):** Core FastAPI project, SQLite models, review endpoints.
-2. **Day 2 (current):** Redis + RQ queue, worker process, stubbed pipeline returning structured comments.
-3. **Day 3:** Multi-agent review pipeline, richer result schema, observability polish.
+2. **Day 2 (complete):** Redis + RQ queue, worker process, stubbed pipeline returning structured comments.
+3. **Day 3 (current):** Multi-agent review pipeline with agent-level metadata, richer response schema, and worker observability logs.
 
 Feel free to keep running the current API for manual testing while the queue/worker enhancements are built.

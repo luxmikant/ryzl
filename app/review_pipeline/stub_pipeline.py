@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from app.schemas.review_schemas import ReviewComment
 
@@ -17,14 +17,24 @@ def _infer_primary_file(diff: str) -> str:
     return "unknown"
 
 
-def run_stubbed_review(diff: str | None) -> Tuple[str, List[ReviewComment]]:
+def run_stubbed_review(diff: str | None) -> Tuple[str, List[ReviewComment], Dict[str, object]]:
+    metadata = {
+        "agents_run": ["stub-agent"],
+        "total_comments": 0,
+        "files_reviewed": 0,
+        "severity_breakdown": {"info": 1},
+        "categories_detected": ["logic"],
+    }
     if not diff:
-        return ("No diff content provided; unable to perform review.", [])
+        metadata["severity_breakdown"] = {}
+        metadata["categories_detected"] = []
+        return ("No diff content provided; unable to perform review.", [], metadata)
 
     file_path = _infer_primary_file(diff)
     checksum = hashlib.sha256(diff.encode("utf-8")).hexdigest()[:8]
 
     comment = ReviewComment(
+        agent="stub-agent",
         file_path=file_path,
         line_number_start=1,
         line_number_end=5,
@@ -42,4 +52,6 @@ def run_stubbed_review(diff: str | None) -> Tuple[str, List[ReviewComment]]:
         "Stub review #{checksum} for {file_path}: replace with real LLM-backed comments soon."
     ).format(checksum=checksum, file_path=file_path)
 
-    return summary, [comment]
+    metadata["total_comments"] = 1
+    metadata["files_reviewed"] = 1
+    return summary, [comment], metadata

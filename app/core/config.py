@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     app_version: str = Field(default="0.1.0")
     database_url: str = Field(default="sqlite:///./reviews.db")
     redis_url: str = Field(default="redis://localhost:6379/0")
+    pipeline_mode: str = Field(default="multi-agent", description="multi-agent or stub")
 
     class Config:
         env_file = ".env"
