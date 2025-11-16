@@ -11,8 +11,8 @@ from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.models.review_request import ReviewRequest
 from app.models.review_result import ReviewResult
-from app.review_pipeline.multi_agent_pipeline import run_multi_agent_review
-from app.review_pipeline.stub_pipeline import run_stubbed_review
+from app.review_pipeline.orchestrator import get_orchestrator
+from app.services.github_service import GitHubAPIError, fetch_pr_diff
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -46,14 +46,50 @@ def process_review_job(review_request_id: str) -> None:
             logger.warning("Review request %s no longer exists", review_request_id)
             return
 
+        if review.source == "github" and not review.diff_snapshot:
+            if not review.repo or not review.pr_number:
+                logger.error(
+                    "Review %s missing repo/pr info for GitHub source", review_request_id
+                )
+                review.status = "failed"
+                review.updated_at = datetime.utcnow()
+                db.commit()
+                return
+
+            try:
+                pr_number = int(review.pr_number)
+            except (TypeError, ValueError):
+                logger.error(
+                    "Invalid PR number %s for review %s", review.pr_number, review_request_id
+                )
+                review.status = "failed"
+                review.updated_at = datetime.utcnow()
+                db.commit()
+                return
+
+            try:
+                diff_text = fetch_pr_diff(review.repo, pr_number)
+            except GitHubAPIError as exc:
+                logger.exception(
+                    "Unable to fetch GitHub diff for %s#%s: %s",
+                    review.repo,
+                    pr_number,
+                    exc,
+                )
+                review.status = "failed"
+                review.updated_at = datetime.utcnow()
+                db.commit()
+                return
+
+            review.diff_snapshot = diff_text
+            db.commit()
+
         review.status = "running"
         review.updated_at = datetime.utcnow()
         db.commit()
 
-        if settings.pipeline_mode == "stub":
-            summary, comments, metadata = run_stubbed_review(review.diff_snapshot)
-        else:
-            summary, comments, metadata = run_multi_agent_review(review.diff_snapshot)
+        orchestrator = get_orchestrator(settings.pipeline_mode)
+        summary, comments, metadata = orchestrator.run(review.diff_snapshot)
 
         serialized_comments = json.dumps(
             {

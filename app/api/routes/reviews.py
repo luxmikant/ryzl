@@ -4,6 +4,11 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import (
+    enforce_rate_limit,
+    require_service_api_key,
+    validate_diff_size,
+)
 from app.core.db import SessionLocal
 from app.schemas.review_schemas import (
     ReviewComment,
@@ -30,9 +35,14 @@ def get_db():
 def submit_review_request(
     payload: ReviewCreateRequest,
     db: Session = Depends(get_db),
+    api_key: str = Depends(require_service_api_key),
 ) -> ReviewResponse:
+    enforce_rate_limit(api_key)
+
     if payload.source == "manual" and not payload.diff:
         raise HTTPException(status_code=400, detail="diff is required for manual source")
+
+    validate_diff_size(payload.diff)
 
     review = create_review_request(
         db,

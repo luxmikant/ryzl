@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import reviews
+from app.api.routes import github, reviews, ui
 from app.core.config import get_settings
 from app.core.db import Base, engine
 from app import models  # noqa: F401
@@ -13,6 +13,8 @@ def create_app() -> FastAPI:
     Base.metadata.create_all(bind=engine)
 
     app.include_router(reviews.router, prefix="/api/v1")
+    app.include_router(github.router, prefix="/api/v1")
+    app.include_router(ui.router)
 
     @app.get("/health", tags=["health"], summary="Health check")
     def health_check():
