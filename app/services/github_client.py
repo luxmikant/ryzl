@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, Optional
+from typing import Any, Mapping, Optional
 
 import httpx
 
@@ -29,6 +29,18 @@ class GitHubClient:
         url = f"{self._base_url}/{path.lstrip('/') }"
         with httpx.Client(timeout=30.0) as client:
             resp = client.get(url, headers=self._build_headers(headers))
+        return resp
+
+    def post(
+        self,
+        path: str,
+        *,
+        json: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, str]] = None,
+    ) -> httpx.Response:
+        url = f"{self._base_url}/{path.lstrip('/') }"
+        with httpx.Client(timeout=30.0) as client:
+            resp = client.post(url, json=json, headers=self._build_headers(headers))
         return resp
 
 

@@ -8,4 +8,7 @@ python-dotenv==1.0.1
 redis==5.0.4
 rq==1.16.2
 httpx==0.25.0
+langchain==0.2.5
+langchain-openai==0.1.7
 pytest==8.2.2
+prometheus-fastapi-instrumentator==7.0.0

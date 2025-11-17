@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import (
@@ -34,10 +34,11 @@ def get_db():
 @router.post("", response_model=ReviewResponse, status_code=201)
 def submit_review_request(
     payload: ReviewCreateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     api_key: str = Depends(require_service_api_key),
 ) -> ReviewResponse:
-    enforce_rate_limit(api_key)
+    enforce_rate_limit(api_key, request)
 
     if payload.source == "manual" and not payload.diff:
         raise HTTPException(status_code=400, detail="diff is required for manual source")

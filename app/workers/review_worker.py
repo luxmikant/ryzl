@@ -12,6 +12,7 @@ from app.core.db import SessionLocal
 from app.models.review_request import ReviewRequest
 from app.models.review_result import ReviewResult
 from app.review_pipeline.orchestrator import get_orchestrator
+from app.services.github_comment_service import sync_review_to_github
 from app.services.github_service import GitHubAPIError, fetch_pr_diff
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,8 @@ def process_review_job(review_request_id: str) -> None:
         review.status = "completed"
         review.updated_at = datetime.utcnow()
         db.commit()
+
+        sync_review_to_github(review, summary, comments, metadata)
 
         duration = time.perf_counter() - started_at
         logger.info(

@@ -21,6 +21,27 @@ class Settings(BaseSettings):
     github_api_base: str = Field(default="https://api.github.com", description="Base URL for GitHub API")
     service_api_key: str | None = Field(default=None, description="API key required for write endpoints")
     max_diff_chars: int = Field(default=200000, description="Maximum allowed diff size for manual submissions")
+    rate_limit_window_seconds: int = Field(default=60)
+    rate_limit_max_requests: int = Field(default=30)
+    github_comment_sync_enabled: bool = Field(default=False)
+    github_comment_max_inline: int = Field(default=10)
+    log_level: str = Field(default="INFO", description="Application log level")
+    enable_prometheus_metrics: bool = Field(default=True)
+    prometheus_metrics_path: str = Field(default="/metrics")
+    llm_provider: str = Field(default="mock", description="Provider backing the LLM orchestrator (mock|openai|azure)")
+    llm_model: str = Field(default="gpt-4o-mini", description="LLM model identifier")
+    llm_temperature: float = Field(default=0.2, ge=0.0, le=1.0)
+    llm_timeout_seconds: int = Field(default=60)
+    llm_deterministic: bool = Field(
+        default=True,
+        description="When true, the orchestrator returns canned responses for tests",
+    )
+    openai_api_key: str | None = Field(default=None, description="OpenAI API key")
+    openai_organization: str | None = Field(default=None, description="OpenAI organization ID (optional)")
+    azure_openai_api_key: str | None = Field(default=None, description="Azure OpenAI API key")
+    azure_openai_endpoint: str | None = Field(default=None, description="Azure OpenAI endpoint URL")
+    azure_openai_deployment: str | None = Field(default=None, description="Azure OpenAI deployment name")
+    azure_openai_api_version: str = Field(default="2024-02-15-preview", description="Azure OpenAI API version")
 
     class Config:
         env_file = ".env"

@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import time
-from collections import defaultdict, deque
-from typing import Deque, Dict
+import logging
 
 from fastapi import Header, HTTPException, Request, status
+from redis.exceptions import RedisError
 
 from app.core.config import get_settings
+from app.core.redis_client import get_redis_client
 
-_RATE_LIMIT_WINDOW = 60  # seconds
-_RATE_LIMIT_MAX = 30  # requests per window per API key
-_request_history: Dict[str, Deque[float]] = defaultdict(deque)
+logger = logging.getLogger(__name__)
 
 
 def require_service_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> str:
@@ -22,15 +20,24 @@ def require_service_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> 
     return x_api_key
 
 
-def enforce_rate_limit(api_key: str) -> None:
-    now = time.monotonic()
-    history = _request_history[api_key]
-    # Remove entries outside the window
-    while history and now - history[0] > _RATE_LIMIT_WINDOW:
-        history.popleft()
-    if len(history) >= _RATE_LIMIT_MAX:
-        raise HTTPException(status_code=429, detail="Rate limit exceeded")
-    history.append(now)
+def enforce_rate_limit(api_key: str, request: Request) -> None:
+    settings = get_settings()
+    redis_client = get_redis_client()
+    client_host = request.client.host if request.client else "unknown"
+    key = f"rl:{api_key}:{client_host}"
+    try:
+        current = redis_client.incr(key)
+        if current == 1:
+            redis_client.expire(key, settings.rate_limit_window_seconds)
+        if current > settings.rate_limit_max_requests:
+            ttl = redis_client.ttl(key)
+            retry_after = ttl if ttl and ttl > 0 else settings.rate_limit_window_seconds
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit exceeded. Try again in {retry_after} seconds.",
+            )
+    except RedisError:
+        logger.warning("Redis unavailable for rate limiting; allowing request", exc_info=True)
 
 
 def validate_diff_size(diff: str | None) -> None:

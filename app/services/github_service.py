@@ -35,4 +35,3 @@ def fetch_pr_diff(repo_full_name: str, pr_number: int) -> str:
     if response.status_code != 200:
         raise GitHubAPIError(response.status_code, response.text)
     return response.text
-*** End Patch
