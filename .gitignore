@@ -32,3 +32,10 @@ ENV/
 .idea/
 *.sublime-workspace
 *.sublime-project
+
+# Node / frontend
+app/frontend/node_modules/
+app/frontend/dist/
+app/frontend/.vite/
+app/frontend/.env
+app/frontend/.env.*

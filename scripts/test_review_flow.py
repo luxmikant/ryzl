@@ -22,7 +22,7 @@ def submit_review():
     payload = {
         "source": "github",
         "repo": "luxmikant/ryzl",
-        "pr_number": 1,
+        "pr_number": 2,
         "diff": None  # Worker will fetch from GitHub
     }
     
